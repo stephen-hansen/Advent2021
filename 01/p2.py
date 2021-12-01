@@ -5,12 +5,17 @@ import utils
 
 def main():
     lines = utils.getlines_int()
-    prev = None
+    prev = 0
+    win = [0,0,0]
     inc = 0
     for i in lines:
-        if prev is not None:
-            inc += int(i > prev)
-        prev = i
+        total = sum(win)
+        if prev >= 3:
+            inc += int((total - win[0] + i) > total)
+        win[0] = win[1]
+        win[1] = win[2]
+        win[2] = i
+        prev += 1
     utils.p(inc)
 
 if __name__ == "__main__":
