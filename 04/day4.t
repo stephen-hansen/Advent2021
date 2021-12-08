@@ -18,13 +18,26 @@ fun tab_alloc(size) {
 }
 
 fun tab_memset(tab, value) {
-	var tab, i, n
+	var i, n
 	n : tab_len(.tab)
 	loop {
 		until .i == .n
 		tab_addr(.tab, .i) : .value
 		i : .i + 1
 	}
+}
+
+fun tab_memcpy(tab) {
+	var i, n, newtab
+	n : tab_len(.tab)
+	newtab : tab_alloc(.n)
+	i : 0
+	loop {
+		until .i == .n
+		tab_addr(.newtab, .i) : tab_index(.tab, .i)
+		i : .i + 1
+	}
+	return .newtab
 }
 
 fun print_inttab(tab) {
@@ -41,7 +54,7 @@ fun print_inttab(tab) {
 }
 
 fun splitString(str, delim) {
-	var c, i, n, tab, newword, wp
+	var c, i, j, n, tab, wp, sp, strlen, newstr
 	i : 0
 	n : 0
 # Get tab_length
@@ -57,20 +70,30 @@ fun splitString(str, delim) {
 # Split, store pointers
 	i : 0
 	tab : tab_alloc(.n)
-	newword : 1
 	wp : 0
+	strlen : 0
+	sp : 0
 	loop {
 		c : .str + .i
-		until ..c == 0
-		if .newword == 1 {
-			tab_addr(.tab, .wp) : .c
+		if (..c == .delim) | (..c == 0) {
+# strcpy previous bytes
+			strlen : .i - .sp
+			newstr : alloc(.strlen+1)
+			j : 0
+			loop {
+				until .sp == .i
+				.newstr + .j : .(.str + .sp)
+				sp : .sp + 1
+				j : .j + 1
+			}
+# Null terminator
+			.newstr + .j : 0
+# Skip delimiter
+			sp : .sp + 1
+			tab_addr(.tab, .wp) : .newstr
 			wp : .wp + 1
-			newword : 0
 		}
-		if ..c == .delim {
-			.c : 0
-			newword : 1
-		}
+		until ..c == 0
 		i : .i + 1
 	}
 # Return pointer to array of words
@@ -100,8 +123,9 @@ fun stringToNumber(str, base) {
 }
 
 fun stringsToNumbers(strtab, base) {
-	var n, i, c, result
+	var n, i, c, result, newtab
 	n : tab_len(.strtab)
+	newtab : tab_alloc(.n)
 	i : 0
 	loop {
 		until .i == .n
@@ -109,15 +133,16 @@ fun stringsToNumbers(strtab, base) {
 # c is tab_address of string
 		result : stringToNumber(.c, .base)
 # modify in-place
-		tab_addr(.strtab, .i) : .result
+		tab_addr(.newtab, .i) : .result
 		i : .i + 1
 	}
-	return .strtab
+	return .newtab
 }
 
 fun splitStrings(strtab, delim) {
-	var n, i, c, result
+	var n, i, c, result, newtab
 	n : tab_len(.strtab)
+	newtab : tab_alloc(.n)
 	i : 0
 	loop {
 		until .i == .n
@@ -125,10 +150,10 @@ fun splitStrings(strtab, delim) {
 # c is tab_address of string
 		result : splitString(.c, .delim)
 # modify in-place
-		tab_addr(.strtab, .i) : .result
+		tab_addr(.newtab, .i) : .result
 		i : .i + 1
 	}
-	return .strtab
+	return .newtab
 }
 
 fun stringComp(str1, str2) {
@@ -214,7 +239,7 @@ fun makeBundles(lines) {
 	return .newtab
 }
 
-fun linesToBoards(lines) {
+fun linesToBoards(lines, caller) {
 	var i, boards, nboards, n, board, bp, bp0, line, numbers
 	i : 1
 # Calc number of boards
@@ -236,6 +261,17 @@ fun linesToBoards(lines) {
 	loop {
 		until .i == .n
 		line : tab_index(.lines, .i)
+		#if .caller == 1 {
+		#	if .i <= 451 {
+		#		iprint(.i)
+		#		nl()
+		#		sprint(.line)
+		#		nl()
+		#	}
+		#	else {
+		#		return
+		#	}
+		#}
 		if isEmptyStr(.line) == 1 {
 			tab_addr(.boards, .bp) : .board
 			board : tab_alloc(5)
@@ -328,10 +364,9 @@ fun scoreBoard(board) {
 	return .sum
 }
 
-fun p1(lines) {
-	var numbers, boards, i, j, k, l, n0, n1, n2, n3, num, board, row, cell, val
-	numbers : stringsToNumbers(splitString(tab_index(.lines, 0), ','), 10)
-	boards : linesToBoards(.lines)
+fun p1(lines, numbers) {
+	var boards, i, j, k, l, n0, n1, n2, n3, num, board, row, cell, val
+	boards : linesToBoards(.lines, 0)
 	n0 : tab_len(.numbers)
 	n1 : tab_len(.boards)
 	i : 0
@@ -373,11 +408,58 @@ fun p1(lines) {
 	}
 }
 
-fun p2(lines) {
+fun p2(lines, numbers) {
+	var completed, lastscore, boards, i, j, k, l, n0, n1, n2, n3, num, board, row, cell, val
+	boards : linesToBoards(.lines, 1)
+	n0 : tab_len(.numbers)
+	n1 : tab_len(.boards)
+	completed : tab_alloc(.n1)
+	lastscore : 0
+	tab_memset(.completed, 0)
+	i : 0
+	loop {
+		until .i == .n0
+		num : tab_index(.numbers, .i)
+# Go through each board, mark off, check winner
+		j : 0
+		loop {
+			until .j == .n1
+			if tab_index(.completed, .j) == 0 {
+				board : tab_index(.boards, .j)
+# Rows
+				k : 0
+				n2 : tab_len(.board)
+				loop {
+					until .k == .n2
+					row : tab_index(.board, .k)
+					l : 0
+					n3 : tab_len(.row)
+					loop {
+						until .l == .n3
+						cell : tab_index(.row, .l)
+						val : tab_index(.cell, 0)
+						if .val == .num {
+							tab_addr(.cell, 1) : 1
+						}
+						l : .l + 1
+					}
+					k : .k + 1
+				}
+# Check if board won
+				if winningBoard(.board) == 1 {
+					lastscore : .num * scoreBoard(.board)
+					tab_addr(.completed, .j) : 1
+				}
+			}
+			j : .j + 1
+		}
+		i : .i + 1
+	}
+	iprint(.lastscore)
 }
 
 fun init() {
-	var input, lines
+	var input, lines, numbers
 	input : "83,69,34,46,30,23,19,75,22,37,89,78,32,39,11,44,95,43,26,48,84,53,94,88,18,40,62,35,27,42,15,2,91,20,4,64,99,71,54,97,52,36,28,7,74,45,70,86,98,1,61,50,68,6,77,8,57,47,51,72,65,3,49,24,79,13,17,92,41,80,63,67,82,90,55,0,10,93,38,21,59,73,33,31,9,76,5,66,16,58,85,87,12,29,25,14,96,56,60,81
 
 68 73 98 51 49
@@ -980,9 +1062,10 @@ fun init() {
 34 36 47 80 14
  7 89 62  9 49"
 	lines : splitString(.input, 10)
-	p1(.lines)
-	nl()
-	p2(.lines)
+	numbers : stringsToNumbers(splitString(tab_index(.lines, 0), ','), 10)
+	#p1(.lines, .numbers)
+	#nl()
+	p2(.lines, .numbers)
 	nl()
 }
 
