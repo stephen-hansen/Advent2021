@@ -9,8 +9,10 @@ import copy
 def main():
     A = getlines()
     tot = 0
-    sc = {')': 3, ']': 57, '}': 1197, '>': 25137}
+    sc = {')': 1, ']': 2, '}': 3, '>': 4}
+    scores = []
     for l in A:
+        tot = 0
         stack = []
         corrupt = False
         for c in l:
@@ -27,9 +29,15 @@ def main():
                 if c != top:
                     corrupt = True
                     break
-        if corrupt:
-            tot += sc[c]
-    p(tot)
+        if not corrupt and len(stack) > 0:
+            stack.reverse()
+            for c in stack:
+                tot *= 5
+                tot += sc[c]
+            scores.append(tot)
+    winner = list(sorted(scores))
+    winner = winner[len(winner)//2]
+    p(winner)
 
 if __name__ == "__main__":
     main()
