@@ -10,11 +10,10 @@ def main():
     A = getlines()
     c = 0
     A = [list(map(int, list(l))) for l in A]
-    for k in range(100):
-        p(A)
-        p('---')
+    for k in range(99999999):
         flash_dict = set()
         flashes = []
+        n_flashes = 0
         for i in range(len(A)):
             for j in range(len(A[i])):
                 A[i][j] += 1
@@ -25,6 +24,7 @@ def main():
             if len(flashes) == 0:
                 break
             i0, j0 = flashes.pop()
+            n_flashes += 1
             adjacent = [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)]
             for i1, j1 in adjacent:
                 try:
@@ -37,13 +37,13 @@ def main():
                         flashes.append(coord)
                 except Exception as e:
                     continue
+        if len(flash_dict) == len(A) * len(A[0]):
+            p(k+1)
+            exit(0)
         for i1, j1 in flash_dict:
             c+=1
             A[i1][j1] = 0
 
-                    
-
-    p(c)
 
 if __name__ == "__main__":
     main()
