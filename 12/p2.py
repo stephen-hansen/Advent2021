@@ -20,21 +20,36 @@ def main():
         conns[d0].append(d1)
         conns[d1].append(d0)
     paths = [["start"]]
+    pdict = [{"start": 1}]
+    doubl = [None]
     final = []
     while True:
         if len(paths) == 0:
             break
         path = paths.pop()
+        dic = pdict.pop()
+        og_dbl = doubl.pop()
         nxt = conns[path[-1]]
         if path[-1] == "end":
             final.append(path)
             continue
         for n in nxt:
-            if not n.isupper() and n in path:
+            dbl = og_dbl
+            if n == "start":
+                continue
+            if not n.isupper() and n in dic and dbl is not None:
                 continue
             p2 = copy.deepcopy(path)
             p2.append(n)
+            d2 = copy.deepcopy(dic)
+            if n not in d2:
+                d2[n] = 0
+            d2[n] += 1
             paths.append(p2)
+            pdict.append(d2)
+            if not n.isupper() and d2[n] == 2:
+                dbl = n
+            doubl.append(dbl)
     p(len(final))
 
 if __name__ == "__main__":
