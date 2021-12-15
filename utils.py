@@ -1,4 +1,5 @@
 import re
+import heapq
 from functools import *
 
 # https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm
@@ -90,72 +91,67 @@ def getlines_filter(func):
 def getlines_filter_regex(pattern_string):
     return getlines_filter(lambda x: bool(re.fullmatch(re.compile(pattern_string), x)))
 
-# node class, can have label, can have children, can be directed or not
 class Node:
-    def __init__(self, label=None, children=[], directed=False):
-        self.children = children
-        self.directed = directed
-        self.label = None
-
-    def add_child(self, child):
-        self.children.append(child)
-        if not self.directed:
-            child.add_child_back(self)
+    def __init__(self, label):
+        self.edges = []
+        self.label = label
 
     def get_label(self):
         return self.label
 
-    def set_label(self, label):
-        self.label = label
+    def add_edge(self, weight, node):
+        self.edges.append((weight, node))
 
-    def add_child_back(self, child):
-        self.children.append(child)
+    def get_edges(self):
+        return self.edges
 
-    def set_parent(self, parent):
-        self.parent = parent
-
-    def bfs(self, target):
-        discovered = {self}
-        queue = [[self]]
-        while len(Q) != 0:
-            path = queue.pop(0)
-            v = path[-1]
-            if v == target:
-                return path
-            for child in self.children:
-                if child not in discovered:
-                    discovered.add(child)
-                    queue.append(list(path).append(child))
-
-# Graph implemnetation, can be directed, implements BFS
 class Graph:
-    def __init__(self, graph=None, directed=False):
-        if graph is None:
-            graph = {}
-        self.graph = graph
-        self.directed = directed
+    def __init__(self):
+        self.graph = {}
+
+    def add_node(self, name):
+        node = Node(name)
+        self.graph[name] = node
 
     def get_node(self, name):
         return self.graph[name]
 
-    def get_nodes(self, filt=None):
-        nodes = list(self.graph.values())
-        if filt:
-            nodes = filter(filt, nodes)
-        return nodes
+    def add_edge(self, from_name, to_name, weight):
+        from_node = self.get_node(from_name)
+        to_node = self.get_node(to_name)
+        from_node.add_edge(weight, to_node)
 
-    def add_node(self, name, cnames=None):
-        self.graph[name] = Node(name, self.directed)
-        if cnames is None:
-            cnames = []
-        for c in cnames:
-            if c not in self.graph:
-                self.graph[c] = Node(c, self.directed)
-            self.graph[name].add_child(self.graph[c])
-        return self.graph[name]
+    def dijkstra(self, source, target=None):
+        Q = set()
+        dist = {}
+        prev = {}
+        for v in self.graph:
+            dist[v] = 999999999999
+            prev[v] = None
+            Q.add(v)
+        dist[source] = 0
 
-    def bfs(self, sourcename, targetname):
-        source = self.graph[sourcename]
-        target = self.graph[targetname]
-        return source.bfs(target)
+        Qheap = [(0, source)]
+        while len(Qheap) > 0:
+            esti, u = heapq.heappop(Qheap)
+            Q.remove(u)
+            if esti > dist[u]:
+                continue
+
+            if target is not None and u == target:
+                break
+
+            edges = self.get_node(u).get_edges()
+            for edge in edges:
+                length = edge[0]
+                v = edge[1].get_label()
+                if v not in Q:
+                    continue
+                alt = esti + length
+                if alt < dist[v]:
+                    dist[v] = alt
+                    prev[v] = u
+                    heapq.heappush(Qheap, (alt, v))
+        
+        return dist, prev
 
