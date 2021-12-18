@@ -101,13 +101,13 @@ def split(valueNode):
 def reduce_number(snailfish):
     while True:
         inorder(snailfish)
-        p('')
+        #p('')
         can_break = True
         # Get leftmost pair at d=4
         cand = get_leftmost_pair(snailfish)
         if cand is not None:
             # Explode it
-            p("Explode")
+            #p("Explode")
             explode(cand)
             can_break = False
         else:
@@ -115,7 +115,7 @@ def reduce_number(snailfish):
             cand = get_leftmost_number(snailfish)
             if cand is not None:
                 # Split it
-                p("Split")
+                #p("Split")
                 split(cand)
                 can_break = False
         if can_break:
@@ -131,6 +131,7 @@ def add(snail1, snail2):
     return root
 
 def inorder(root):
+    return
     if root.value is not None:
         print(root.value, end='')
     else:
@@ -146,38 +147,43 @@ def magnitude(root):
     else:
         return 3*magnitude(root.left) + 2*magnitude(root.right)
 
+def line_to_tree(l):
+    curr = None
+    for c in l:
+        if c == '[':
+            new = myNode()
+            new.set_parent(curr)
+            if curr is not None:
+                curr.set_conn(new)
+            curr = new
+        elif c == ']':
+            if curr.parent is not None:
+                curr = curr.parent
+        elif c == ',':
+            continue
+        else:
+            v = int(c)
+            new = myNode()
+            new.set_value(v)
+            new.set_parent(curr)
+            if curr is not None:
+                curr.set_conn(new)
+    return curr
+
 def main():
     A = getlines()
-    inp = []
-    for l in A:
-        d = 0
-        curr = None
-        for c in l:
-            if c == '[':
-                new = myNode()
-                new.set_parent(curr)
-                if curr is not None:
-                    curr.set_conn(new)
-                curr = new
-            elif c == ']':
-                if curr.parent is not None:
-                    curr = curr.parent
-            elif c == ',':
+    largest_magnitude = -1
+    for i in range(len(A)):
+        for j in range(len(A)):
+            if i == j:
                 continue
-            else:
-                v = int(c)
-                new = myNode()
-                new.set_value(v)
-                new.set_parent(curr)
-                if curr is not None:
-                    curr.set_conn(new)
-        inp.append(curr)
-    result = inp[0]
-    inorder(result)
-    p('')
-    for i in range(1, len(inp)):
-        result = add(result, inp[i])
-    p(magnitude(result))
+            t1 = line_to_tree(A[i])
+            t2 = line_to_tree(A[j])
+            t3 = add(t1, t2)
+            m = magnitude(t3)
+            if m > largest_magnitude:
+                largest_magnitude = m
+    p(largest_magnitude)
 
 if __name__ == "__main__":
     main()
