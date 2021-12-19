@@ -6,8 +6,6 @@ from functools import reduce
 from utils import *
 import copy
 
-GLOBAL_BEACONS = set()
-
 def correct_orientation(sc, o=None):
     if o is None:
         o = ['x', 0]
@@ -61,12 +59,6 @@ def overlap(sc1, sc2, p1=None, o1=None):
                         abs_locs2.append([loc_estimate[0]+scan2[0], loc_estimate[1]+scan2[1], loc_estimate[2]+scan2[2]])
                     num_matches = len(list(filter(lambda x: x in abs_locs, abs_locs2)))
                     if num_matches >= 12:
-                        for bcon in abs_locs:
-                            bcon = (bcon[0], bcon[1], bcon[2])
-                            GLOBAL_BEACONS.add(bcon)
-                        for bcon in abs_locs2:
-                            bcon = (bcon[0], bcon[1], bcon[2])
-                            GLOBAL_BEACONS.add(bcon)
                         return True, loc_estimate, orientation
     return False, None, None
 
@@ -100,7 +92,15 @@ def main():
                         locs[j] = loc
                         ors[j] = orient
     p("Done")
-    p(len(GLOBAL_BEACONS))
+    farthest_dist = 0
+    for i, l1 in locs.items():
+        for j, l2 in locs.items():
+            if i == j:
+                continue
+            dist = abs(l1[0] - l2[0]) + abs(l1[1] - l2[1]) + abs(l1[2] - l2[2])
+            if dist > farthest_dist:
+                farthest_dist = dist
+    p(farthest_dist)
 
 if __name__ == "__main__":
     main()
