@@ -28,13 +28,20 @@ def main():
                     img[(rows, j)] = c
                     j += 1
                 rows += 1
-    for i in range(-rows, 2*rows):
-        for j in range(-cols, 2*cols):
-            if (i,j) not in img:
-                img[(i,j)] = '.'
     # Infinite
-    for r in range(2):
+    for r in range(50):
+        p(r)
+        minx = min(img.keys(), key=lambda x: x[0])[0]
+        maxx = max(img.keys(), key=lambda x: x[0])[0]
+        miny = min(img.keys(), key=lambda x: x[1])[1]
+        maxy = max(img.keys(), key=lambda x: x[1])[1]
         output_img = {}
+        for j in range(miny-1, maxy+2):
+            img[(minx-1,j)] = '.' if r % 2 == 0 else '#'
+            img[(maxx+1,j)] = '.' if r % 2 == 0 else '#'
+        for i in range(minx-1, maxx+2):
+            img[(i,miny-1)] = '.' if r % 2 == 0 else '#'
+            img[(i,maxy+1)] = '.' if r % 2 == 0 else '#'
         for tup, pixel in img.items():
             i = tup[0]
             j = tup[1]
@@ -43,16 +50,10 @@ def main():
             for n in neighbors:
                 newp = (i+n[0], j+n[1])
                 if newp not in img:
-                    if r == 0:
-                        c = 0
-                    else:
-                        index = 0
-                        ch = '.'
-                        for _ in range(r):
-                            ch = img_enh[index]
-                            if ch == '#':
-                                index = int("111111111", 2)
-                        c = (ch == '#')
+                    ch = '.'
+                    if r % 2 == 1:
+                        ch = '#'
+                    c = (ch == '#')
                 else:
                     c = (img[newp] == '#')
                 value *= 2
