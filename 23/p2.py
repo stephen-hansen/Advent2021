@@ -12,18 +12,16 @@ GRAPH = Graph()
 #12.3.4.5.67#
 ###1#2#3#4###
   #1#2#3#4#
+  #1#2#3#4#
+  #1#2#3#4#
   #########
 
 # labels
-# i=0 r1 top
-# i=1 r1 bot
-# i=2 r2 top
-# i=3 r2 bot
-# i=4 r3 top
-# i=5 r3 bot
-# i=6 r4 top
-# i=7 r4 bot
-# i=8..14 h1-7
+# i=0..3 r1
+# i=4..7 r2
+# i=8..11 r3
+# i=12..15 r4
+# i=16..22 h1-7
 
 MEMO = set()
 
@@ -35,42 +33,41 @@ def get_steps(label, movfrom, movto):
         movto, movfrom = movfrom, movto
     # Compute path and step length
     # Extra step if moving from bottom room
-    if movfrom % 2 == 1:
-        steps += 1
-    if movto <= 9:
-        # 8 requires extra step and one extra check
-        if movto == 8:
+    steps += movfrom % 4
+    if movto <= 17: # h1, h2
+        # 16 requires extra step and one extra check
+        if movto == 16:
             steps += 1
-            checks.append(label[9])
+            checks.append(label[17])
         for k in range(3):
-            if movfrom >= 2*(k+1):
+            if movfrom >= 4*(k+1):
                 steps += 2
-                checks.append(label[10+k])
-    elif movto == 10: # h3
+                checks.append(label[18+k])
+    elif movto == 18: # h3
         for k in range(2):
-            if movfrom >= 2*(k+2):
+            if movfrom >= 4*(k+2):
                 steps += 2
-                checks.append(label[11+k])
-    elif movto == 11: # h4 (mid)
-        if movfrom <= 1:
+                checks.append(label[19+k])
+    elif movto == 19: # h4 (mid)
+        if movfrom <= 3:
             steps += 2
-            checks.append(label[10])
-        elif movfrom >= 6:
+            checks.append(label[18])
+        elif movfrom >= 12:
             steps += 2
-            checks.append(label[12])
-    elif movto == 12: # h5
+            checks.append(label[20])
+    elif movto == 20: # h5
         for k in range(2):
-            if movfrom < 2*(k+1):
+            if movfrom < 4*(k+1):
                 steps += 2
-                checks.append(label[10+k])
-    elif movto >= 13: # h6, h7
-        if movto == 14:
+                checks.append(label[18+k])
+    elif movto >= 21: # h6, h7
+        if movto == 22:
             steps += 1
-            checks.append(label[13])
+            checks.append(label[21])
         for k in range(3):
-            if movfrom < 2*(k+1):
+            if movfrom < 4*(k+1):
                 steps += 2
-                checks.append(label[10+k])
+                checks.append(label[18+k])
     # Validate path is available
     for c in checks:
         if c != '.':
@@ -93,6 +90,7 @@ def get_steps_and_update(label, movfrom, movto):
         # Evaluate new node
         generate_graph(newlabel)
 
+@lru_cache(maxsize=None)
 def generate_graph(label):
     global GRAPH
     if label in MEMO:
@@ -101,40 +99,54 @@ def generate_graph(label):
     if label not in GRAPH:
         GRAPH.add_node(label)
     # Moves to hallway
-    char = 'AABBCCDD'
-    for movfrom in range(0, 8, 2):
+    char = 'AAAABBBBCCCCDDDD'
+    for movfrom in range(0, 16, 4):
         ch = char[movfrom]
-        if label[movfrom] == '.':
-            # Top empty, only consider bottom
+        og_movfrom = movfrom
+        while label[movfrom] == '.' and movfrom - og_movfrom < 4:
             movfrom += 1
-        if label[movfrom] == ch or label[movfrom] == '.':
-            # Correct item, don't  move
+        should_continue = False
+        if label[movfrom] == ch:
+            should_continue = True
+            movfromi = movfrom
+            while movfromi - og_movfrom < 4:
+                if label[movfromi] != '.' and label[movfromi] != ch:
+                    should_continue = False
+                    break
+                movfromi += 1
+        if should_continue or movfrom-og_movfrom >= 4 or label[movfrom] == '.':
+            # Correct item, don't move
             continue
         # Find hallway to swap with
-        for movto in range(8, 15):
+        for movto in range(16, 23):
             get_steps_and_update(label, movfrom, movto)
     # Moves to room
-    room_nums = {'A': 1, 'B': 3, 'C': 5, 'D': 7}
-    for movfrom in range(8, 15):
+    room_nums = {'A': 3, 'B': 7, 'C': 11, 'D': 15}
+    for movfrom in range(16, 23):
         user = label[movfrom]
         if user == '.':
             continue
-        movto = room_nums[user]
-        if label[movto] != '.':
+        og_movto = room_nums[user]
+        movto = og_movto
+        continue_loop = False
+        while og_movto - movto < 4 and label[movto] != '.':
             if label[movto] == user:
                 movto -= 1
             else:
-                continue
+                continue_loop = True
+                break
+        if og_movto - movto >= 4 or continue_loop:
+            continue
         get_steps_and_update(label, movfrom, movto)
 
 def main():
     # TODO efficient graph representation of problem
     A = getlines()
-    start = A[2][3] + A[3][3] + A[2][5] + A[3][5] + A[2][7] + A[3][7] + A[2][9] + A[3][9] + "."*7
+    start = A[2][3] + 'DD' + A[3][3] + A[2][5] + 'CB' + A[3][5] + A[2][7] + 'BA' + A[3][7] + A[2][9] + 'AC' + A[3][9] + "."*7
     p(start)
     generate_graph(start)
     # TODO run dijkstra from start to finish state
-    finish = "AABBCCDD" + "."*7
+    finish = "AAAABBBBCCCCDDDD" + "."*7
     dist, prev = GRAPH.dijkstra(start, finish)
     p(dist[finish])
 
