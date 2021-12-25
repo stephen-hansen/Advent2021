@@ -113,6 +113,9 @@ class Graph:
         node = Node(name)
         self.graph[name] = node
 
+    def __contains__(self, key):
+        return (key in self.graph)
+
     def get_node(self, name):
         return self.graph[name]
 
@@ -134,7 +137,8 @@ class Graph:
         Qheap = [(0, source)]
         while len(Qheap) > 0:
             esti, u = heapq.heappop(Qheap)
-            Q.remove(u)
+            if u in Q:
+                Q.remove(u)
             if esti > dist[u]:
                 continue
 
